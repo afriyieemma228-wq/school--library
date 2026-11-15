@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>School Library Management System</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.5; padding: 24px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border); flex-wrap: wrap; gap: 12px; }
+    header h1 { font-size: 1.5rem; }
+    .stats { display: flex; gap: 16px; font-size: 0.9rem; color: var(--muted); }
+    .stats span strong { color: var(--text); }
+    .grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+    @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 24px; }
+    .card h2 { font-size: 1.1rem; margin-bottom: 16px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: var(--muted); }
+    input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; }
+    input:focus { outline: none; border-color: var(--primary); }
+    button { background: var(--primary); color: white; border: none; padding: 9px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+    button:hover { background: var(--primary-hover); }
+    button:disabled { background: #cbd5e1; cursor: not-allowed; }
+    button.btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+    button.btn-return { background: var(--success); }
+    button.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--border); }
+    .search-bar { margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+    .badge-ok { background: #dcfce7; color: var(--success); }
+    .badge-out { background: #fee2e2; color: var(--danger); }
+    .badge-due { background: #fef3c7; color: var(--warning); }
+    .empty-state { text-align: center; padding: 24px; color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>📚 School Library System</h1>
+        <p style="font-size: 0.85rem; color: var(--muted);">Catalog, Circulation & Student Loan Tracker</p>
+      </div>
+      <div class="stats">
+        <span>Total Books: <strong id="statTotal">0</strong></span>
+        <span>Available: <strong id="statAvail">0</strong></span>
+        <span>Active Loans: <strong id="statLoans">0</strong></span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2>➕ Add New Book</h2>
+          <form id="addBookForm">
+            <div class="form-group">
+              <label for="title">Book Title</label>
+              <input type="text" id="title" placeholder="e.g., Things Fall Apart" required />
+            </div>
+            <div class="form-group">
+              <label for="author">Author</label>
+              <input type="text" id="author" placeholder="e.g., Chinua Achebe" required />
+            </div>
+            <div class="form-group">
+              <label for="isbn">ISBN / Book Code</label>
+              <input type="text" id="isbn" placeholder="e.g., LIB-104" required />
+            </div>
+            <div class="form-group">
+              <label for="copies">Total Copies</label>
+              <input type="number" id="copies" min="1" value="1" required />
+            </div>
+            <button type="submit" style="width: 100%; margin-top: 6px;">Add to Catalog</button>
+          </form>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>📖 Book Catalog</h2>
+          <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search by title, author, or ISBN..." />
+          </div>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Title & Author</th>
+                  <th>Availability</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="catalogBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>🎓 Borrowed Books (Active Loans)</h2>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Book</th>
+                  <th>Student (Name & ID)</th>
+                  <th>Due Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="loansBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let books = [];
+    let loans = [];
+
+    async function loadData() {
+      const res = await fetch('/api/data');
+      const data = await res.json();
+      books = data.books;
+      loans = data.loans;
+      render();
+    }
+
+    document.getElementById('addBookForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        title: document.getElementById('title').value.trim(),
+        author: document.getElementById('author').value.trim(),
+        isbn: document.getElementById('isbn').value.trim(),
+        copies: parseInt(document.getElementById('copies').value, 10)
+      };
+
+      await fetch('/api/books', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      e.target.reset();
+      loadData();
+    });
+
+    window.borrowBook = async function(bookId) {
+      const book = books.find(b => b.id === bookId);
+      if (!book || book.available < 1) return;
+
+      const studentName = prompt(`Enter Student Full Name borrowing "${book.title}":`);
+      if (!studentName || !studentName.trim()) return;
+
+      const studentId = prompt(`Enter Student ID / Class (e.g., STU-104):`);
+      if (!studentId || !studentId.trim()) return;
+
+      const dueDate = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
+
+      const res = await fetch('/api/loans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookId,
+          studentName: studentName.trim(),
+          studentId: studentId.trim(),
+          dueDate
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error);
+      }
+      loadData();
+    };
+
+    window.returnBook = async function(loanId) {
+      await fetch(`/api/loans/${loanId}/return`, { method: 'POST' });
+      loadData();
+    };
+
+    window.deleteBook = async function(bookId) {
+      const res = await fetch(`/api/books/${bookId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error);
+      }
+      loadData();
+    };
+
+    document.getElementById('searchInput').addEventListener('input', render);
+
+    function render() {
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const filteredBooks = books.filter(b =>
+        b.title.toLowerCase().includes(query) ||
+        b.author.toLowerCase().includes(query) ||
+        b.isbn.toLowerCase().includes(query)
+      );
+
+      document.getElementById('statTotal').textContent = books.reduce((sum, b) => sum + b.total, 0);
+      document.getElementById('statAvail').textContent = books.reduce((sum, b) => sum + b.available, 0);
+      document.getElementById('statLoans').textContent = loans.length;
+
+      const catalogBody = document.getElementById('catalogBody');
+      catalogBody.innerHTML = filteredBooks.length === 0
+        ? `<tr><td colspan="4" class="empty-state">No matching books found.</td></tr>`
+        : filteredBooks.map(b => `
+          <tr>
+            <td><strong>${b.isbn}</strong></td>
+            <td>
+              <div style="font-weight: 600;">${b.title}</div>
+              <div style="font-size: 0.8rem; color: var(--muted);">${b.author}</div>
+            </td>
+            <td>
+              <span class="badge ${b.available > 0 ? 'badge-ok' : 'badge-out'}">
+                ${b.available} / ${b.total} available
+              </span>
+            </td>
+            <td style="white-space: nowrap;">
+              <button class="btn-sm" onclick="borrowBook(${b.id})" ${b.available === 0 ? 'disabled' : ''}>Borrow</button>
+              <button class="btn-sm btn-danger" onclick="deleteBook(${b.id})" title="Delete Book">✕</button>
+            </td>
+          </tr>
+        `).join('');
+
+      const loansBody = document.getElementById('loansBody');
+      const today = new Date().toISOString().split('T')[0];
+
+      loansBody.innerHTML = loans.length === 0
+        ? `<tr><td colspan="4" class="empty-state">No books are currently borrowed.</td></tr>`
+        : loans.map(l => {
+          const isOverdue = l.due_date < today;
+          return `
+            <tr>
+              <td><strong>${l.book_title}</strong></td>
+              <td>
+                <div>${l.student_name}</div>
+                <div style="font-size: 0.8rem; color: var(--muted);">${l.student_id}</div>
+              </td>
+              <td>
+                <span class="badge ${isOverdue ? 'badge-out' : 'badge-due'}">
+                  ${l.due_date} ${isOverdue ? '(Overdue)' : ''}
+                </span>
+              </td>
+              <td>
+                <button class="btn-sm btn-return" onclick="returnBook(${l.id})">Mark Returned</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
